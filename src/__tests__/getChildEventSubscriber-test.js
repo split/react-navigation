@@ -458,3 +458,57 @@ test('child focus with immediate transition', () => {
   expect(childWillBlurHandler.mock.calls.length).toBe(1);
   expect(childDidBlurHandler.mock.calls.length).toBe(1);
 });
+
+test('navigating to same route should not trigger blur or focus event', () => {
+  const parentSubscriber = jest.fn();
+  const emitParentAction = payload => {
+    parentSubscriber.mock.calls.forEach(subs => {
+      if (subs[0] === payload.type) {
+        subs[1](payload);
+      }
+    });
+  };
+  const subscriptionRemove = () => {};
+  parentSubscriber.mockReturnValueOnce({ remove: subscriptionRemove });
+  const childEventSubscriber = getChildEventSubscriber(parentSubscriber, 'key1')
+    .addListener;
+  const randomAction = { type: 'FooAction' };
+  const testState = {
+    key: 'foo',
+    routeName: 'FooRoute',
+    routes: [{ key: 'key0' }, { key: 'key1' }],
+    index: 0,
+    isTransitioning: false,
+  };
+  const childWillFocusHandler = jest.fn();
+  const childDidFocusHandler = jest.fn();
+  const childWillBlurHandler = jest.fn();
+  const childDidBlurHandler = jest.fn();
+  childEventSubscriber('willFocus', childWillFocusHandler);
+  childEventSubscriber('didFocus', childDidFocusHandler);
+  childEventSubscriber('willBlur', childWillBlurHandler);
+  childEventSubscriber('didBlur', childDidBlurHandler);
+  const newState = {
+    ...testState,
+    index: 1,
+  };
+  emitParentAction({
+    type: 'action',
+    action: randomAction,
+    lastState: testState,
+    state: newState,
+  });
+  expect(childWillFocusHandler.mock.calls.length).toBe(1);
+  expect(childDidFocusHandler.mock.calls.length).toBe(1);
+
+  emitParentAction({
+    type: 'action',
+    action: randomAction,
+    lastState: newState,
+    state: null,
+  });
+  expect(childWillFocusHandler.mock.calls.length).toBe(1);
+  expect(childDidFocusHandler.mock.calls.length).toBe(1);
+  expect(childWillBlurHandler.mock.calls.length).toBe(0);
+  expect(childDidBlurHandler.mock.calls.length).toBe(0);
+});

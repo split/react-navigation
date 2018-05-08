@@ -69,8 +69,7 @@ export default function getChildEventSubscriber(addListener, key) {
       const lastRoutes = lastState && lastState.routes;
       const routes = state && state.routes;
 
-      const lastFocusKey =
-        lastState && lastState.routes && lastState.routes[lastState.index].key;
+      const lastFocusKey = lastRoutes && lastRoutes[lastState.index].key;
       const focusKey = routes && routes[state.index].key;
 
       const isChildFocused = focusKey === key;
@@ -112,7 +111,7 @@ export default function getChildEventSubscriber(addListener, key) {
 
       if (lastEmittedEvent === 'didFocus') {
         // The child is currently focused. Look for blurring events
-        if (!isChildFocused) {
+        if (state && !isChildFocused) {
           // The child is no longer focused within this navigation state
           emit((lastEmittedEvent = 'willBlur'), childPayload);
         } else if (eventName === 'willBlur') {
